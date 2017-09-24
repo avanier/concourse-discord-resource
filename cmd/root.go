@@ -18,74 +18,63 @@ package cmd
 
 import (
 	"fmt"
-	"os"
+	"log"
 
-	homedir "github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"github.com/themalkolm/venom"
+	yaml "gopkg.in/yaml.v2"
 )
 
-var cfgFile string
-
-// RootCmd represents the base command when called without any subcommands
 var RootCmd = &cobra.Command{
-	Use:   "concourse-discord-resource",
-	Short: "A brief description of your application",
-	Long: `A longer description that spans multiple lines and likely contains
-examples and usage of using your application. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
-	// Uncomment the following line if your bare application
-	// has an action associated with it:
-	//	Run: func(cmd *cobra.Command, args []string) { },
+	Use:          "example",
+	Short:        "Do example things.",
+	SilenceUsage: true,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		var cfg Config
+		err := venom.Unmarshal(&cfg, viper.GetViper())
+		if err != nil {
+			return err
+		}
+		return runE(&cfg)
+	},
 }
 
-// Execute adds all child commands to the root command sets flags appropriately.
-// This is called by main.main(). It only needs to happen once to the rootCmd.
-func Execute() {
-	if err := RootCmd.Execute(); err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
+type Config struct {
+	ClientID     string
+	ClientSecret string
+	BotUsername  string
+	BotToken     string
 }
 
 func init() {
-	cobra.OnInitialize(initConfig)
+	RootCmd.PersistentFlags().String("client-id", "", "A Discord App Client ID must be set")
+	RootCmd.PersistentFlags().String("client-secret", "", "A Discord App Client Secret must be set")
+	RootCmd.PersistentFlags().String("bot-username", "", "A Discord Bot Username must be set")
+	RootCmd.PersistentFlags().String("bot-token", "", "A Discord Bot Token must be set")
 
-	// Here you will define your flags and configuration settings.
-	// Cobra supports persistent flags, which, if defined here,
-	// will be global for your application.
-	RootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.concourse-discord-resource.yaml)")
+	defaults := Config{
+		ClientID:     "",
+		ClientSecret: "",
+		BotUsername:  "",
+		BotToken:     "",
+	}
 
-	// Cobra also supports local flags, which will only run
-	// when this action is called directly.
-	RootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	flags := venom.MustDefineFlags(defaults)
+	RootCmd.PersistentFlags().AddFlagSet(flags)
+
+	err := venom.TwelveFactorCmd("example", RootCmd, RootCmd.PersistentFlags())
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
-// initConfig reads in config file and ENV variables if set.
-func initConfig() {
-	if cfgFile != "" {
-		// Use config file from the flag.
-		viper.SetConfigFile(cfgFile)
-	} else {
-		// Find home directory.
-		home, err := homedir.Dir()
-		if err != nil {
-			fmt.Println(home)
-			os.Exit(1)
-		}
-
-		// Search config in home directory with name ".cobra" (without extension).
-		viper.AddConfigPath(home)
-		viper.SetConfigName(".cobra")
+func runE(cfg *Config) error {
+	b, err := yaml.Marshal(&cfg)
+	if err != nil {
+		return err
 	}
+	fmt.Printf("%+v", string(b))
 
-	viper.AutomaticEnv() // read in environment variables that match
-
-	// If a config file is found, read it in.
-	if err := viper.ReadInConfig(); err == nil {
-		fmt.Println("Using config file:", viper.ConfigFileUsed())
-	}
+	return nil
 }

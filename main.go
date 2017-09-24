@@ -16,8 +16,14 @@
 
 package main
 
-import "github.com/avanier/concourse-discord-resource/cmd"
+import (
+	"log"
+
+	"github.com/avanier/concourse-discord-resource/cmd"
+)
 
 func main() {
-	cmd.Execute()
+	if err := cmd.RootCmd.Execute(); err != nil {
+		log.Fatal(err)
+	}
 }
