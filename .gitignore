@@ -264,3 +264,4 @@ $RECYCLE.BIN/
 
 # End of https://www.gitignore.io/api/vim,node,macos,linux,emacs,windows,sublimetext,visualstudiocode,go
 concourse-discord-resource
+vendor/ -diff
